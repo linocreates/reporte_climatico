@@ -2,6 +2,8 @@ import requests
 from fastapi import FastAPI
 from datetime import datetime, timezone
 
+from src.logica import buscar_clima
+
 app = FastAPI(title="API de Agregação de Dados Climáticos e Geográficos")
 
 @app.get("/api/v1/health")
@@ -32,3 +34,13 @@ async def health_check():
             "timestamp": current_timestamp,
             "motivo": "Serviço externo indisponível"
         }
+    
+@app.get("/api/v1/clima/{nome_cidade}")
+async def obter_clima(nome_cidade: str):
+    result = buscar_clima(nome_cidade)
+
+    if isinstance(result, dict) and "nome" in result:
+        full_timestamp = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+        result["consultado_em"] = full_timestamp
+
+    return result
