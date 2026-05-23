@@ -99,9 +99,11 @@ async def obter_clima(nome_cidade: str):
             }
         )
     
-    if isinstance(result, dict) and "nome" in result:
+    if isinstance(result, list):
         full_timestamp = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
-        result["consultado_em"] = full_timestamp
+        for previsao in result:
+            previsao["consultado_em"] = full_timestamp
+
     return result
 
 # ENDPOINT 2
