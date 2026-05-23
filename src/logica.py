@@ -57,6 +57,28 @@ def buscar_clima(cidade_usuario):
     except Exception as e:
         return {"erro": True, "codigo": 500, "mensagem": f"Erro interno: {str(e)}"}
 
+def listar_cidades_por_estado(sigla_uf):
+    """
+    Busca a lista de municípios de um estado usando a Brasil API (IBGE).
+    """
+    uf_limpa = sigla_uf.strip().upper()
+    url_municipios = f"https://brasilapi.com.br/api/ibge/municipios/v1/{uf_limpa}"
+    
+    try:
+        resposta = requests.get(url_municipios, timeout=10)
+        
+        if resposta.status_code in [404, 400]:
+            return {"erro": True, "codigo": 404, "mensagem": "Estado não encontrado."}
+            
+        if resposta.status_code != 200:
+            return {"erro": True, "codigo": 503, "mensagem": "Serviço externo indisponível."}
+            
+        lista_municipios = resposta.json()
+        return lista_municipios
+        
+    except Exception as e:
+        return {"erro": True, "codigo": 500, "mensagem": f"Erro interno: {str(e)}"}
+
 if __name__ == "__main__":
     cidade = input("Informe o nome da cidade: ")
     print(buscar_clima(cidade))
