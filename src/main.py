@@ -1,7 +1,7 @@
-import requests
 from fastapi import FastAPI
+from fastapi.responses import JSONResponse
+import requests
 from datetime import datetime, timezone
-
 from src.logica import buscar_clima
 
 app = FastAPI(title="API de Agregação de Dados Climáticos e Geográficos")
@@ -37,8 +37,66 @@ async def health_check():
     
 @app.get("/api/v1/clima/{nome_cidade}")
 async def obter_clima(nome_cidade: str):
-    result = buscar_clima(nome_cidade)
-
+    if len(nome_cidade.strip()) < 2:
+        return JSONResponse(
+            status_code=400,
+            content={
+                "erro": True,
+                "codigo": "NOME_INVALIDO",
+                "mensagem": "O nome da cidade deve conter pelo menos 2 caracteres",
+                "nome_informado": nome_cidade
+            }
+        )    
+    
+    try:
+        result = buscar_clima(nome_cidade)
+    except Exception as e:
+        return JSONResponse(
+            status_code=503,
+            content={
+                "erro": True,
+                "codigo": "SERVICO_EXTERNO_INDISPONIVEL",
+                "mensagem": "Não foi possível obter dados do serviço externo. Tente novamente em alguns instantes",
+                "servico": "CPTEC"
+            }
+        )
+    
+    if isinstance(result, dict) and "erro" in result:
+        codigo_erro = result.get("codigo")
+        mensagem_erro = str(result.get("mensagem")).lower()
+        
+        if (codigo_erro == 503) or ("failed to resolve" in mensagem_erro):
+            return JSONResponse(
+                status_code=503,
+                content={
+                    "erro": True,
+                    "codigo": "SERVICO_EXTERNO_INDISPONIVEL",
+                    "mensagem": "Não foi possível obter dados do serviço externo. Tente novamente em alguns instantes",
+                    "servico": "CPTEC"
+                }
+            )
+        
+        return JSONResponse(
+            status_code=404,
+            content={
+                "erro": True,
+                "codigo": "CIDADE_NAO_ENCONTRADA",
+                "mensagem": "Nenhuma cidade encontrada com o nome informado",
+                "nome_informado": nome_cidade
+            }
+        )
+        
+    if not result:
+        return JSONResponse(
+            status_code=404,
+            content={
+                "erro": True,
+                "codigo": "CIDADE_NAO_ENCONTRADA",
+                "mensagem": "Nenhuma cidade encontrada com o nome informado",
+                "nome_informado": nome_cidade
+            }
+        )
+    
     if isinstance(result, dict) and "nome" in result:
         full_timestamp = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
         result["consultado_em"] = full_timestamp
