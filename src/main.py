@@ -9,7 +9,7 @@ app = FastAPI(title="API de Agregação de Dados Climáticos e Geográficos")
 # ENDPOINT 3
 @app.get("/api/v1/health")
 async def health_check():
-    current_timestamp = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+    current_timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     
     try:
         request_response = requests.get("https://brasilapi.com.br/api/cptec/v1/cidade", timeout=5)
@@ -65,16 +65,15 @@ async def obter_clima(nome_cidade: str):
     
     if isinstance(result, dict) and "erro" in result:
         codigo_erro = result.get("codigo")
-        mensagem_erro = str(result.get("mensagem")).lower()
-        
-        if (codigo_erro == 503) or ("failed to resolve" in mensagem_erro):
+    
+        if codigo_erro == 404:
             return JSONResponse(
-                status_code=503,
+                status_code=404,
                 content={
                     "erro": True,
-                    "codigo": "SERVICO_EXTERNO_INDISPONIVEL",
-                    "mensagem": "Não foi possível obter dados do serviço externo. Tente novamente em alguns instantes",
-                    "servico": "CPTEC"
+                    "codigo": "CIDADE_NAO_ENCONTRADA",
+                    "mensagem": "Nenhuma cidade encontrada com o nome informado",
+                    "nome_informado": nome_cidade
                 }
             )
         
@@ -100,7 +99,7 @@ async def obter_clima(nome_cidade: str):
         )
     
     if isinstance(result, list):
-        full_timestamp = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+        full_timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
         for previsao in result:
             previsao["consultado_em"] = full_timestamp
 
