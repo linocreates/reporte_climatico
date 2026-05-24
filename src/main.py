@@ -169,9 +169,9 @@ async def obter_cidades_por_estado(sigla_uf: str, limite: int = 10):
             }
         )
 
-    lista_formatada = [{"nome": city["nome"]} for city in result]
+    lista_formatada = [{"nome": city["nome"].title()} for city in result]
     lista_com_limite = lista_formatada[:limite]
-    timestamp_sucesso = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+    timestamp_sucesso = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
     return {
         "uf": uf_limpa,
