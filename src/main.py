@@ -1,10 +1,19 @@
 from fastapi import FastAPI, Query
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 import requests
 from datetime import datetime, timezone
 from src.logica import buscar_clima, listar_cidades_por_estado
 
 app = FastAPI(title="API de Agregação de Dados Climáticos e Geográficos")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # ENDPOINT 3
 @app.get("/api/v1/health")
